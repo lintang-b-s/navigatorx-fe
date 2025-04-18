@@ -1,4 +1,4 @@
 declare interface UserLocation {
-    latitude: number;
-    longitude: number;
+  latitude: number;
+  longitude: number;
 }

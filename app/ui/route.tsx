@@ -1,3 +1,4 @@
+"use client";
 import { CiSearch } from "react-icons/ci";
 import { LiaSourcetree } from "react-icons/lia";
 import { CiLocationOn } from "react-icons/ci";
@@ -5,13 +6,16 @@ import { BiDotsVerticalRounded } from "react-icons/bi";
 import { Button } from "./button";
 import { CiRoute } from "react-icons/ci";
 import { SearchBox } from "./search";
+import { useState } from "react";
+import { SearchResults } from "./searchResult";
+import { RouterProps } from "../types/definition";
 
-export function Router() {
+export function Router(props: RouterProps) {
   return (
     <div
-      className="flex px-4 py-4 h-[150px] w-[355px] md:h-[200px] md:w-[380px]  
+      className="flex px-4 py-4 h-[150px] w-[355px] md:h-[200px] md:w-[440px]  
        items-center gap-2 md:gap-4 absolute top-10 left-[5%] md:left-10 bg-white
-        rounded-lg overflow-hidden"
+        rounded-lg overflow-hidden shadow-lg"
     >
       <div className="flex flex-col gap-1 items-center ">
         <LiaSourcetree
@@ -28,8 +32,8 @@ export function Router() {
         />
       </div>
       <div className="flex flex-col gap-4 items-start justify-center">
-        <SearchBox isSource={true} />
-        <SearchBox isSource={false} />
+        <SearchBox isSource={true} activate={props.sourceSearchActive} />
+        <SearchBox isSource={false} activate={props.destinationSearchActive} />
       </div>
 
       <Button>

@@ -4,8 +4,7 @@ import * as React from "react";
 import { Map, Marker, useMap, GeolocateControl } from "@vis.gl/react-maplibre";
 import "maplibre-gl/dist/maplibre-gl.css"; // See notes below
 import { useEffect, useState } from "react";
-
-import { FaRegDotCircle } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 export function MapComponent() {
   const { current: map } = useMap();
@@ -14,13 +13,6 @@ export function MapComponent() {
     latitude: 40,
     zoom: 3.5,
   });
-  const [error, setError] = useState<any>(null);
-
-  const centerLocOnClick = () => {
-    map?.flyTo({
-      center: [viewState.longitude, viewState.latitude],
-    });
-  };
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -33,11 +25,11 @@ export function MapComponent() {
           });
         },
         (error) => {
-          setError(error.message);
+          toast.error(error.message);
         }
       );
     } else {
-      setError("Geolocation is not supported by this browser.");
+      toast.error("Geolocation is not supported by this browser.");
     }
   }, []);
   return (
