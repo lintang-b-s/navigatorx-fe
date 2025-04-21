@@ -4,13 +4,19 @@ import { SearchBoxProps } from "../types/definition";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import { SearchResults } from "./searchResult";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { truncateString } from "../lib/util";
 
 export function SearchBox({ isSource, activate }: SearchBoxProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
+  const paramName = isSource ? "source" : "destination";
+  const [term, setTerm] = useState(() => searchParams.get(paramName) ?? "");
+
+  useEffect(() => {
+    setTerm(searchParams.get(paramName) ?? "");
+  }, [searchParams, paramName]);
 
   const handleSearch = useDebouncedCallback((term, isSource) => {
     const params = new URLSearchParams(searchParams);
@@ -38,18 +44,10 @@ export function SearchBox({ isSource, activate }: SearchBoxProps) {
         text-[#869ca7] text-base z-0 "
         placeholder={`${isSource ? "Source" : "Destination"}`}
         onChange={(e) => {
+          setTerm(e.target.value);
           handleSearch(e.target.value, isSource);
         }}
-        defaultValue={
-          searchParams.get(`${isSource ? "source" : "destination"}`)?.toString()
-            ? truncateString(
-                searchParams
-                  .get(`${isSource ? "source" : "destination"}`)
-                  ?.toString()!,
-                30
-              )
-            : ""
-        }
+        value={term}
         onFocus={() => {
           activate(true);
         }}
@@ -58,7 +56,7 @@ export function SearchBox({ isSource, activate }: SearchBoxProps) {
         }}
       />
       <div className="absolute top-2 right-4 ">
-        <CiSearch size={20} color="#959AA6" />
+        {term == "" ? <CiSearch size={20} color="#959AA6" /> : <></>}
       </div>
     </div>
   );

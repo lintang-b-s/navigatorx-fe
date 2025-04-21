@@ -1,17 +1,30 @@
-import { Dispatch, RefObject, SetStateAction } from "react";
+import { Dispatch, MouseEvent, RefObject, SetStateAction } from "react";
 import { Place } from "../lib/searchApi";
+import { LineData } from "../page";
+import { RouteResponse } from "../lib/navigatorxApi";
 
 export type SearchBoxProps = {
   isSource: boolean;
-  activate: Dispatch<SetStateAction<boolean>>;
+  activate: (val: boolean) => void;
 };
 
 export type RouterProps = {
-  sourceSearchActive: Dispatch<SetStateAction<boolean>>;
-  destinationSearchActive: Dispatch<SetStateAction<boolean>>;
+  sourceSearchActive: (val: boolean) => void;
+  destinationSearchActive: (val: boolean) => void;
+  onHandleStartRoute: (e: any) => void;
+  isSourceFocused: boolean;
+  isDestinationFocused: boolean;
+  onHandleReverseGeocoding: (e: any, isSource: boolean) => void;
+  routeData?: RouteResponse[];
 };
 
 export type SearchSelectorProps = {
   places: Place[];
   select: (place: Place) => void;
+};
+
+export type MapComponentProps = {
+  lineData?: LineData;
+  alternativeRoutes?: LineData[];
+  onUserLocationUpdateHandler: (lat: number, lon: number) => void;
 };

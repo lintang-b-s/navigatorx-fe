@@ -32,7 +32,41 @@ export const fetchSearch = async (
       lon: lon,
     };
     const { data } = await axios.get(
-      `http://103.87.66.130:6060/api/search?query=${param.query}&top_k=${param.topk}&offset=${param.offset}&lat=${param.lat}&lon=${param.lon}`,
+      `http://168.231.118.7:6060/api/search?query=${param.query}&top_k=${param.topk}&offset=${param.offset}&lat=${param.lat}&lon=${param.lon}`,
+      {}
+    );
+    return data;
+  } catch (error) {
+    throw new Error("Failed to fetch search results");
+  }
+};
+
+export type ReverseGeocodingRequest = {
+  lat: number;
+  lon: number;
+};
+
+export type ReverseGeocodingResponse = {
+  data: {
+    data: {
+      lat: number;
+      lon: number;
+      name: string;
+      address: string;
+    };
+  };
+};
+export const fetchReverseGeocoding = async ({
+  lat,
+  lon,
+}: ReverseGeocodingRequest): Promise<ReverseGeocodingResponse> => {
+  try {
+    const param = {
+      lat: lat,
+      lon: lon,
+    };
+    const { data } = await axios.get(
+      `http://168.231.118.7:6060/api/reverse?lat=${param.lat}&lon=${param.lon}`,
       {}
     );
     return data;
