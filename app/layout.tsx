@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
+import { Suspense } from "react";
 
 const openSans = Open_Sans({
   subsets: ["latin"],
@@ -18,10 +19,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${openSans.className}  antialiased`}
-      >
-        {children}
+      <body className={`${openSans.className}  antialiased`}>
+        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
       </body>
     </html>
   );

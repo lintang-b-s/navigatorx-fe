@@ -3,7 +3,7 @@ import Image from "next/image";
 import { MapComponent } from "@/app/ui/map";
 import { Router } from "@/app/ui/routing";
 import { SearchResults } from "./ui/searchResult";
-import { MouseEvent, useEffect, useState } from "react";
+import { MouseEvent, Suspense, useEffect, useState } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { fetchReverseGeocoding, fetchSearch, Place } from "@/app/lib/searchApi";
 import toast from "react-hot-toast";
