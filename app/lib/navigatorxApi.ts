@@ -44,7 +44,7 @@ export const fetchRoute = async ({
 }: RouteRequest): Promise<RouteResponse> => {
   try {
     const { data } = await axios.get(
-      `http://168.231.118.7:5000/api/navigations/shortest-path?src_lat=${srcLat}&src_lon=${srcLon}&dst_lat=${destLat}&dst_lon=${destLon}`,
+      `https://168.231.118.7:5000/api/navigations/shortest-path?src_lat=${srcLat}&src_lon=${srcLon}&dst_lat=${destLat}&dst_lon=${destLon}`,
       {}
     );
 
@@ -62,7 +62,7 @@ export const fetchAlternativeRoutes = async ({
 }: RouteRequest): Promise<AlternativeRoutesResponse> => {
   try {
     const { data } = await axios.get(
-      `http://168.231.118.7:5000/api/navigations/shortest-path-alternative-routes?src_lat=${srcLat}&src_lon=${srcLon}&dst_lat=${destLat}&dst_lon=${destLon}`,
+      `https://168.231.118.7:5000/api/navigations/shortest-path-alternative-routes?src_lat=${srcLat}&src_lon=${srcLon}&dst_lat=${destLat}&dst_lon=${destLon}`,
       {}
     );
 
