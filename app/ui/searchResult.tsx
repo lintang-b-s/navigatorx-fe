@@ -1,7 +1,6 @@
 import { Dispatch, SetStateAction } from "react";
 import { Place } from "../lib/searchApi";
 import { SearchSelectorProps } from "../types/definition";
-import { Select } from "@chakra-ui/react";
 
 export function SearchResults(props: SearchSelectorProps) {
   return (
