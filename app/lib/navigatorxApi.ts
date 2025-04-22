@@ -1,14 +1,18 @@
 import axios from "axios";
 
 export interface Direction {
-  Instruction: string;
-  Point: {
+  instruction: string;
+  turn_point: {
     lat: number;
     lon: number;
   };
-  StreetName: string;
-  ETA: number;
-  Distance: number;
+  street_name: string;
+  eta: number;
+  distance: number;
+  edge_ids: number[];
+  polyline: string;
+  turn_bearing: number;
+  turn_type: string;
 }
 
 export interface CumulativeDirection extends Direction {

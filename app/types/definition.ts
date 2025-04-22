@@ -16,6 +16,9 @@ export type RouterProps = {
   isDestinationFocused: boolean;
   onHandleReverseGeocoding: (e: any, isSource: boolean) => void;
   routeData?: RouteResponse[];
+  activeRoute: number;
+  handleRouteClick: (index: number) => void;
+  handleDirectionActive: (show: boolean) => void;
 };
 
 export type SearchSelectorProps = {
@@ -27,4 +30,7 @@ export type MapComponentProps = {
   lineData?: LineData;
   alternativeRoutes?: LineData[];
   onUserLocationUpdateHandler: (lat: number, lon: number) => void;
+  activeRoute: number;
+  isDirectionActive: boolean;
+  routeData?: RouteResponse[];
 };

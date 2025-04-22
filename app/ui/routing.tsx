@@ -10,18 +10,15 @@ import { RouterProps } from "../types/definition";
 import { CiGps } from "react-icons/ci";
 import { getArrivalTime } from "@/app/lib/util";
 import { CumulativeDirection, RouteResponse } from "../lib/navigatorxApi";
+import { IoIosArrowBack } from "react-icons/io";
+import Image from "next/image";
 
 export function Router(props: RouterProps) {
   const [isSourceFocused, setIsSourceFocused] = useState(false);
-  const [activeRoute, setActiveRoute] = useState(0);
   const [showDirections, setShowDirections] = useState(false);
 
-  const handleRouteClick = (index: number) => {
-    setActiveRoute(index);
-  };
-
-  const handleShowDirections = () => {
-    setShowDirections(true);
+  const handleShowDirections = (show: boolean) => {
+    setShowDirections(show);
   };
 
   useEffect(() => {
@@ -40,8 +37,8 @@ export function Router(props: RouterProps) {
       !props.isDestinationFocused ? (
         showRouteResult(
           props,
-          activeRoute,
-          handleRouteClick,
+          props.activeRoute,
+          props.handleRouteClick,
           showDirections,
           handleShowDirections
         )
@@ -109,7 +106,7 @@ function showRouteResult(
   activeRoute: number,
   handleRouteClick: (index: number) => void,
   showDirections: boolean = false,
-  handleShowDirections: () => void
+  handleShowDirections: (show: boolean) => void
 ) {
   return (
     <div
@@ -155,7 +152,9 @@ function showRouteResult(
 
       {!showDirections ? (
         <div className="flex flex-col  py-2 flex-1">
-          <p className="text-left text-base text-[#666666] mt-2 mb-2">Rute</p>
+          <p className="ml-2 text-left text-base text-[#666666] mt-2 mb-2">
+            Rute
+          </p>
 
           {props.routeData &&
             props.routeData.map((route, index) => (
@@ -191,7 +190,8 @@ function showRouteResult(
                      focus-visible:outline-offset-2 focus-visible:outline-blue-500 active:bg-blue-600 
                      cursor-pointer aria-disabled:opacity-50`}
                   onClick={(e) => {
-                    handleShowDirections();
+                    handleShowDirections(true);
+                    props.handleDirectionActive(true);
                   }}
                 >
                   Directions
@@ -203,7 +203,8 @@ function showRouteResult(
         showRouteDirectionsComponent(
           props.routeData![activeRoute],
           showDirections,
-          handleShowDirections
+          handleShowDirections,
+          props.handleDirectionActive
         )
       )}
     </div>
@@ -213,18 +214,19 @@ function showRouteResult(
 function showRouteDirectionsComponent(
   route: RouteResponse,
   showDirections: boolean = false,
-  handleShowDirections: () => void
+  handleShowDirections: (show: boolean) => void,
+  handleDirectionActive: (show: boolean) => void
 ) {
   const routeDirections = route.driving_directions.reduce<
     CumulativeDirection[]
   >((acc, currentDirection) => {
     const lastDirection = acc[acc.length - 1];
     const cumulativeEta = lastDirection
-      ? lastDirection.cumulativeEta + currentDirection.ETA
-      : currentDirection.ETA;
+      ? lastDirection.cumulativeEta + currentDirection.eta
+      : currentDirection.eta;
     const cumulativeDistance = lastDirection
-      ? lastDirection.cumulativeDistance + currentDirection.Distance
-      : currentDirection.Distance;
+      ? lastDirection.cumulativeDistance + currentDirection.distance
+      : currentDirection.distance;
 
     return [
       ...acc,
@@ -238,31 +240,81 @@ function showRouteDirectionsComponent(
 
   return (
     <div className="flex flex-col  py-2 flex-1 overflow-y-scroll">
-      <p className="text-left text-base text-[#666666] mt-2 mb-2">Directions</p>
+      <div className="flex flex-row gap-2">
+        <button
+          className={`flex ml-1 mt-2 h-[20px] items-center rounded-md bg-purple-600 px-3 
+                  text-sm font-medium text-white transition-colors
+                   hover:bg-purple-400 focus-visible:outline 
+                     focus-visible:outline-offset-2 focus-visible:outline-purple-500 active:bg-purple-600 
+                     cursor-pointer aria-disabled:opacity-50`}
+          onClick={(e) => {
+            handleShowDirections(false);
+            handleDirectionActive(false);
+          }}
+        >
+          <IoIosArrowBack size={20} />
+        </button>
+        <p className="text-left text-base text-[#666666] mt-2 mb-2">
+          Directions
+        </p>
+      </div>
 
       {routeDirections.map((direction, index) => (
         <div
           key={`route-${index}`}
-          className={`flex flex-row items-center border-t-[1px] ${
+          className={`flex flex-row gap-2 items-center border-t-[1px] ${
             index == routeDirections!.length - 1 ? "border-b-[1px] mb-10" : ""
           }  border-[#D3DAE0] cursor-pointer group py2 `}
         >
           <div
-            className={`w-1  h-full mr-4 bg-blue-500 group-hover:bg-[#B7BABF]`}
+            className={`w-1  h-full mr-1 bg-blue-500 group-hover:bg-[#B7BABF]`}
           ></div>
+          <Image
+            src={getTurnIcon(direction.turn_type)}
+            width={24}
+            height={24}
+            alt={`turn-${index}`}
+            key={`turn-${index}`}
+          />
           <div className="flex flex-col  py-4 gap-2  justify-start">
             <div className="flex flex-row items-center gap-2">
               <p className="text-base font-regular  ">
-                {direction.Instruction}
+                {direction.instruction}
               </p>
             </div>
             <p className="text-sm font-light">
-              {direction.cumulativeEta} menit ({Math.round(direction.Distance)}{" "}
-              m)
+              {direction.cumulativeEta} menit (
+              {Math.round(direction.cumulativeDistance)} m)
             </p>
           </div>
         </div>
       ))}
     </div>
   );
+}
+
+function getTurnIcon(turnType: string): string {
+  switch (turnType) {
+    case "TURN_RIGHT":
+      return "/icons/turn_right.png";
+    case "TURN_SHARP_RIGHT":
+      return "/icons/turn_right.png";
+    case "TURN_LEFT":
+      return "/icons/turn_left.png";
+    case "TURN_SHARP_LEFT":
+      return "/icons/turn_left.png";
+    case "U_TURN_RIGHT":
+      return "/icons/u_turn_right.png";
+    case "U_TURN_LEFT":
+      return "/icons/u_turn_left.png";
+    case "":
+      return "/icons/straight.png";
+    case "KEEP_RIGHT":
+      return "/icons/turn_slight_right.png";
+    case "KEEP_LEFT":
+      return "/icons/turn_slight_left.png";
+    case "ROUNDABOUT":
+      return "/icons/roundabout_right.png";
+  }
+  return "";
 }

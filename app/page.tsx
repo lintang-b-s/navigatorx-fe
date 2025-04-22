@@ -31,6 +31,11 @@ export default function Home() {
   const [alternativeRoutesLineData, setAlternativeRoutesLineData] = useState<
     LineData[]
   >([]);
+
+  const [isDirectionActive, setIsDirectionActive] = useState(false);
+
+  const [activeRoute, setActiveRoute] = useState(0);
+
   const [routeData, setRouteData] = useState<RouteResponse[]>();
 
   const searchParams = useSearchParams();
@@ -208,12 +213,23 @@ export default function Home() {
     });
   };
 
+  const handleRouteClick = (index: number) => {
+    setActiveRoute(index);
+  };
+
+  const handleDirectionActive = (show: boolean) => {
+    setIsDirectionActive(show);
+  };
+
   return (
     <main className="flex relative  w-full overflow-hidden">
       <MapComponent
         lineData={polylineData}
         onUserLocationUpdateHandler={onUserLocationUpdateHandler}
         alternativeRoutes={alternativeRoutesLineData}
+        activeRoute={activeRoute}
+        isDirectionActive={isDirectionActive}
+        routeData={routeData}
       />
       <Router
         sourceSearchActive={handleFocusSourceSearch}
@@ -223,6 +239,9 @@ export default function Home() {
         isDestinationFocused={isDestinationFocused}
         onHandleReverseGeocoding={onHandleReverseGeocoding}
         routeData={routeData}
+        handleRouteClick={handleRouteClick}
+        activeRoute={activeRoute}
+        handleDirectionActive={handleDirectionActive}
       />
 
       {showResult && isSourceFocused && (
