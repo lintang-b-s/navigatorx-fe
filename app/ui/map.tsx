@@ -43,6 +43,62 @@ export function MapComponent({
   });
 
   useEffect(() => {
+    if (isDirectionActive) {
+      if (activeRoute == 0) {
+        let zoomLevel = 15;
+        if (routeData![0].distance > 7 && routeData![0].distance < 15) {
+          zoomLevel = 12;
+        } else if (routeData![0].distance > 15 && routeData![0].distance < 70) {
+          zoomLevel = 10;
+        }
+        const midIndex = Math.floor(lineData!.geometry.coordinates.length / 2);
+        setViewState({
+          longitude: lineData!.geometry.coordinates[midIndex][0],
+          latitude: lineData!.geometry.coordinates[midIndex][1],
+          zoom: zoomLevel,
+        });
+      } else {
+        let zoomLevel = 15;
+        if (
+          routeData![activeRoute].distance > 7 &&
+          routeData![activeRoute].distance < 15
+        ) {
+          zoomLevel = 12;
+        } else if (
+          routeData![activeRoute].distance > 15 &&
+          routeData![activeRoute].distance < 70
+        ) {
+          zoomLevel = 10;
+        }
+        const midIndex = Math.floor(
+          alternativeRoutes[activeRoute].geometry.coordinates.length / 2
+        );
+
+        setViewState({
+          longitude:
+            alternativeRoutes[activeRoute].geometry.coordinates[midIndex][0],
+          latitude:
+            alternativeRoutes[activeRoute].geometry.coordinates[midIndex][1],
+          zoom: zoomLevel,
+        });
+      }
+    } else if (lineData) {
+      let zoomLevel = 15;
+      if (routeData![0].distance > 7 && routeData![0].distance < 15) {
+        zoomLevel = 12;
+      } else if (routeData![0].distance > 15 && routeData![0].distance < 70) {
+        zoomLevel = 10;
+      }
+      const midIndex = Math.floor(lineData!.geometry.coordinates.length / 2);
+      setViewState({
+        longitude: lineData!.geometry.coordinates[midIndex][0],
+        latitude: lineData!.geometry.coordinates[midIndex][1],
+        zoom: zoomLevel,
+      });
+    }
+  }, [isDirectionActive, lineData]);
+
+  useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -234,12 +290,12 @@ function getTurnIconDirection(turnType: string): string {
       return "/icons2/turn-left.png";
     case "TURN_SHARP_LEFT":
       return "/icons2/turn-left.png";
-    case "U_TURN_RIGHT":
-      return "/icons2/u-turn-right.png";
-    case "U_TURN_LEFT":
-      return "/icons2/u-turn-left.png";
     case "":
       return "/icons2/straight.png";
+    case "TURN_SLIGHT_RIGHT":
+      return "/icons2/turn-slight-right.png";
+    case "TURN_SLIGHT_LEFT":
+      return "/icons2/turn-slight-left.png";
     case "KEEP_RIGHT":
       return "/icons2/turn-slight-right.png";
     case "KEEP_LEFT":

@@ -309,12 +309,16 @@ function getTurnIcon(turnType: string): string {
       return "/icons/u_turn_left.png";
     case "":
       return "/icons/straight.png";
-    case "KEEP_RIGHT":
+    case "TURN_SLIGHT_RIGHT":
       return "/icons/turn_slight_right.png";
-    case "KEEP_LEFT":
+    case "TURN_SLIGHT_LEFT":
       return "/icons/turn_slight_left.png";
     case "ROUNDABOUT":
       return "/icons/roundabout_right.png";
+    case "KEEP_LEFT":
+      return "/icons/fork_left.png";
+    case "KEEP_RIGHT":
+      return "/icons/fork_right.png";
   }
   return "";
 }
