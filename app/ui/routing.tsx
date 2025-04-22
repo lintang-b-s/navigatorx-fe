@@ -40,7 +40,8 @@ export function Router(props: RouterProps) {
           props.activeRoute,
           props.handleRouteClick,
           showDirections,
-          handleShowDirections
+          handleShowDirections,
+          props.handleSetNextTurnIndex
         )
       ) : (
         <div
@@ -106,7 +107,8 @@ function showRouteResult(
   activeRoute: number,
   handleRouteClick: (index: number) => void,
   showDirections: boolean = false,
-  handleShowDirections: (show: boolean) => void
+  handleShowDirections: (show: boolean) => void,
+  handleSetNextTurnIndex: (index: number) => void
 ) {
   return (
     <div
@@ -204,7 +206,8 @@ function showRouteResult(
           props.routeData![activeRoute],
           showDirections,
           handleShowDirections,
-          props.handleDirectionActive
+          props.handleDirectionActive,
+          handleSetNextTurnIndex
         )
       )}
     </div>
@@ -215,7 +218,8 @@ function showRouteDirectionsComponent(
   route: RouteResponse,
   showDirections: boolean = false,
   handleShowDirections: (show: boolean) => void,
-  handleDirectionActive: (show: boolean) => void
+  handleDirectionActive: (show: boolean) => void,
+  handleSetNextTurnIndex: (index: number) => void
 ) {
   const routeDirections = route.driving_directions.reduce<
     CumulativeDirection[]
@@ -265,6 +269,9 @@ function showRouteDirectionsComponent(
           className={`flex flex-row gap-2 items-center border-t-[1px] ${
             index == routeDirections!.length - 1 ? "border-b-[1px] mb-10" : ""
           }  border-[#D3DAE0] cursor-pointer group py2 `}
+          onClick={() => {
+            handleSetNextTurnIndex(index);
+          }}
         >
           <div
             className={`w-1  h-full mr-1 bg-blue-500 group-hover:bg-[#B7BABF]`}

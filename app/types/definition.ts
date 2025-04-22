@@ -19,6 +19,7 @@ export type RouterProps = {
   activeRoute: number;
   handleRouteClick: (index: number) => void;
   handleDirectionActive: (show: boolean) => void;
+  handleSetNextTurnIndex: (index: number) => void;
 };
 
 export type SearchSelectorProps = {
@@ -33,4 +34,7 @@ export type MapComponentProps = {
   activeRoute: number;
   isDirectionActive: boolean;
   routeData?: RouteResponse[];
+  nextTurnIndex: number;
+  onSelectSource: (place: Place) => void;
+  onSelectDestination: (place: Place) => void;
 };

@@ -9,6 +9,7 @@ import {
   Source,
   Layer,
   NavigationControl,
+  Popup,
 } from "@vis.gl/react-maplibre";
 import "maplibre-gl/dist/maplibre-gl.css"; // See notes below
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import toast from "react-hot-toast";
 import { MapComponentProps } from "../types/definition";
 import { LineData } from "../page";
 import Image from "next/image";
+import { IoLocationSharp } from "react-icons/io5";
 
 export function MapComponent({
   lineData,
@@ -24,7 +26,15 @@ export function MapComponent({
   activeRoute,
   isDirectionActive,
   routeData,
+  nextTurnIndex,
+  onSelectSource,
+  onSelectDestination,
 }: MapComponentProps) {
+  const [contextMenuCoord, setContextMenuCoord] = useState<{
+    lng: number;
+    lat: number;
+  } | null>(null);
+
   const dummyRoute: LineData = {
     type: "Feature",
     geometry: {
@@ -99,6 +109,17 @@ export function MapComponent({
   }, [isDirectionActive, lineData]);
 
   useEffect(() => {
+    if (nextTurnIndex != -1 && routeData) {
+      const turn = routeData[activeRoute].driving_directions[nextTurnIndex];
+      setViewState({
+        longitude: turn.turn_point.lon,
+        latitude: turn.turn_point.lat,
+        zoom: 17,
+      });
+    }
+  }, [nextTurnIndex]);
+
+  useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -123,6 +144,13 @@ export function MapComponent({
       style={{ width: "100vw", height: "100vh" }}
       onMove={(evt) => setViewState(evt.viewState)}
       mapStyle="https://tiles.openfreemap.org/styles/liberty"
+      onContextMenu={(evt) => {
+        evt.preventDefault();
+        setContextMenuCoord({ lng: evt.lngLat.lng, lat: evt.lngLat.lat });
+      }}
+      onClick={() => {
+        if (contextMenuCoord) setContextMenuCoord(null);
+      }}
     >
       <GeolocateControl
         position="bottom-right"
@@ -275,6 +303,68 @@ export function MapComponent({
             />
           </Source>
         </>
+      )}
+
+      {contextMenuCoord && (
+        <Popup
+          longitude={contextMenuCoord.lng}
+          latitude={contextMenuCoord.lat}
+          anchor="bottom"
+          onClose={() => setContextMenuCoord(null)}
+        >
+          <div className="py-2 flex flex-col gap-2 justify-center">
+            <div className="flex flex-row gap-2 items-center">
+              <div className="flex items-center justify-center rounded-lg h-[35px] w-[35px] bg-[#FFE1DF]">
+                <IoLocationSharp size={24} color="#FF3528" />
+              </div>
+              <p>
+                {contextMenuCoord.lat.toPrecision(5)}, &nbsp;
+                {contextMenuCoord.lng.toPrecision(6)}
+              </p>
+            </div>
+
+            <ul>
+              <li
+                onClick={() => {
+                  onSelectSource({
+                    osm_object: {
+                      id: 0,
+                      name: `${contextMenuCoord.lat}, ${contextMenuCoord.lng}`,
+                      lat: contextMenuCoord.lat,
+                      lon: contextMenuCoord.lng,
+                      type: "source",
+                      address: "",
+                    },
+                    distance: 0,
+                  });
+                  setContextMenuCoord(null);
+                }}
+                className="text-lg  hover:bg-[#F2F4F7] py-2 rounded-lg"
+              >
+                Set as source point
+              </li>
+              <li
+                onClick={() => {
+                  onSelectDestination({
+                    osm_object: {
+                      id: 0,
+                      name: `${contextMenuCoord.lat}, ${contextMenuCoord.lng}`,
+                      lat: contextMenuCoord.lat,
+                      lon: contextMenuCoord.lng,
+                      type: "source",
+                      address: "",
+                    },
+                    distance: 0,
+                  });
+                  setContextMenuCoord(null);
+                }}
+                className="text-lg hover:bg-[#F2F4F7] py-2 rounded-lg"
+              >
+                Set as destination point
+              </li>
+            </ul>
+          </div>
+        </Popup>
       )}
     </Map>
   );

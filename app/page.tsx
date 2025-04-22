@@ -46,6 +46,8 @@ export default function Home() {
 
   const [sourceLoc, setSourceLoc] = useState<Place>();
   const [destinationLoc, setDestinationLoc] = useState<Place>();
+
+  const [nextTurnIndex, setNextTurnIndex] = useState(-1);
   const pathname = usePathname();
 
   const { replace } = useRouter();
@@ -98,7 +100,12 @@ export default function Home() {
 
   const pushParam = (key: "source" | "destination", place: Place) => {
     const p = new URLSearchParams(searchParams.toString());
-    p.set(key, `${place.osm_object.name}, ${place.osm_object.address}`);
+    p.set(
+      key,
+      `${place.osm_object.name} ${
+        place.osm_object.address != "" ? `, ${place.osm_object.address}` : ""
+      }`
+    );
     replace(`${pathname}?${p.toString()}`);
   };
 
@@ -221,6 +228,10 @@ export default function Home() {
     setIsDirectionActive(show);
   };
 
+  const handleSetNextTurnIndex = (index: number) => {
+    setNextTurnIndex(index);
+  };
+
   return (
     <main className="flex relative  w-full overflow-hidden">
       <MapComponent
@@ -230,6 +241,9 @@ export default function Home() {
         activeRoute={activeRoute}
         isDirectionActive={isDirectionActive}
         routeData={routeData}
+        nextTurnIndex={nextTurnIndex}
+        onSelectSource={onSelectSource}
+        onSelectDestination={onSelectDestination}
       />
       <Router
         sourceSearchActive={handleFocusSourceSearch}
@@ -242,6 +256,7 @@ export default function Home() {
         handleRouteClick={handleRouteClick}
         activeRoute={activeRoute}
         handleDirectionActive={handleDirectionActive}
+        handleSetNextTurnIndex={handleSetNextTurnIndex}
       />
 
       {showResult && isSourceFocused && (
