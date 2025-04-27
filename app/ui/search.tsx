@@ -18,17 +18,17 @@ export function SearchBox({ isSource, activate }: SearchBoxProps) {
     setTerm(searchParams.get(paramName) ?? "");
   }, [searchParams, paramName]);
 
-  const handleSearch = useDebouncedCallback((term, isSource) => {
+  const handleSearch = useDebouncedCallback((currTerm, isSource) => {
     const params = new URLSearchParams(searchParams);
     if (isSource) {
-      if (term) {
-        params.set("source", term);
+      if (currTerm) {
+        params.set("source", currTerm);
       } else {
         params.delete("source");
       }
     } else {
-      if (term) {
-        params.set("destination", term);
+      if (currTerm) {
+        params.set("destination", currTerm);
       } else {
         params.delete("destination");
       }
