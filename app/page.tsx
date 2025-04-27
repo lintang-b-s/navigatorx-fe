@@ -32,6 +32,7 @@ export default function Home() {
   const [distanceFromNextTurnPoint, setDistanceFromNextTurnPoint] =
     useState<number>(0); // in meter
   const [currentDirectionIndex, setCurrentDirectionIndex] = useState(1);
+  const [gpsTraces, setGpsTraces] = useState<GPSTrace[]>([]);
 
   // search states
   const searchParams = useSearchParams();
@@ -269,6 +270,9 @@ export default function Home() {
               if (currLastDistance * 1000 < 8.14) {
                 return;
               }
+              if (currentGpsTraces.length == 100) {
+                currentGpsTraces = currentGpsTraces.slice(1);
+              }
             }
 
             currentGpsTraces.push({
@@ -313,6 +317,7 @@ export default function Home() {
 
             setGpsHeading(pos.coords.heading ? pos.coords.heading : 0);
 
+            setGpsTraces(currentGpsTraces);
             setSnappedGpsLoc({
               lat: lastProjectedLoc.lat,
               lon: lastProjectedLoc.lon,
@@ -340,7 +345,7 @@ export default function Home() {
   useEffect(() => {
     const usedRoute = routeData?.[activeRoute];
     const firstRouteEdgeID = usedRoute?.driving_directions[0].edge_ids[0];
-    if (snappedEdgeID == firstRouteEdgeID) {
+    if (snappedEdgeID == firstRouteEdgeID || gpsTraces.length == 1) {
       return;
     }
 
