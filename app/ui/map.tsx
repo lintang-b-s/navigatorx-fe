@@ -161,6 +161,10 @@ export function MapComponent({
       onClick={() => {
         if (contextMenuCoord) setContextMenuCoord(null);
       }}
+      touchZoomRotate={true}
+      onLoad={(e) => {
+        e.target.touchZoomRotate.enableRotation(); 
+      }}
     >
       {!routeStarted ? (
         <>
