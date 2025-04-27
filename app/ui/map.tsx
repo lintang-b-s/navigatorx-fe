@@ -14,10 +14,12 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css"; // See notes below
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { MapComponentProps } from "../types/definition";
-import { LineData } from "../page";
+import { LineData, MapComponentProps } from "../types/definition";
 import Image from "next/image";
 import { IoLocationSharp } from "react-icons/io5";
+import { FaLocationArrow } from "react-icons/fa";
+
+const userRouteMarkerDegree = 45.0; // in degrees
 
 export function MapComponent({
   lineData,
@@ -29,23 +31,15 @@ export function MapComponent({
   nextTurnIndex,
   onSelectSource,
   onSelectDestination,
+  snappedGPSLoc,
+  routeStarted,
+  gpsHeading,
 }: MapComponentProps) {
   const [contextMenuCoord, setContextMenuCoord] = useState<{
     lng: number;
     lat: number;
   } | null>(null);
 
-  const dummyRoute: LineData = {
-    type: "Feature",
-    geometry: {
-      type: "LineString",
-      coordinates: [
-        [-100, 40],
-        [-100, 40],
-      ],
-    },
-  };
-  alternativeRoutes = [dummyRoute, ...alternativeRoutes!];
   const [viewState, setViewState] = React.useState({
     longitude: -100,
     latitude: 40,
@@ -53,6 +47,15 @@ export function MapComponent({
   });
 
   useEffect(() => {
+    if (routeStarted && snappedGPSLoc) {
+      // update view state to user current snapped gps location
+      setViewState({
+        longitude: snappedGPSLoc!.lon,
+        latitude: snappedGPSLoc!.lat,
+        zoom: 16,
+      });
+      return;
+    }
     if (isDirectionActive) {
       if (activeRoute == 0) {
         let zoomLevel = 15;
@@ -81,14 +84,14 @@ export function MapComponent({
           zoomLevel = 10;
         }
         const midIndex = Math.floor(
-          alternativeRoutes[activeRoute].geometry.coordinates.length / 2
+          alternativeRoutes![activeRoute].geometry.coordinates.length / 2
         );
 
         setViewState({
           longitude:
-            alternativeRoutes[activeRoute].geometry.coordinates[midIndex][0],
+            alternativeRoutes![activeRoute].geometry.coordinates[midIndex][0],
           latitude:
-            alternativeRoutes[activeRoute].geometry.coordinates[midIndex][1],
+            alternativeRoutes![activeRoute].geometry.coordinates[midIndex][1],
           zoom: zoomLevel,
         });
       }
@@ -106,7 +109,13 @@ export function MapComponent({
         zoom: zoomLevel,
       });
     }
-  }, [isDirectionActive, lineData]);
+  }, [
+    isDirectionActive,
+    lineData,
+    alternativeRoutes,
+    routeStarted,
+    snappedGPSLoc,
+  ]);
 
   useEffect(() => {
     if (nextTurnIndex != -1 && routeData) {
@@ -141,6 +150,7 @@ export function MapComponent({
   return (
     <Map
       {...viewState}
+      bearing={gpsHeading}
       style={{ width: "100vw", height: "100vh" }}
       onMove={(evt) => setViewState(evt.viewState)}
       mapStyle="https://tiles.openfreemap.org/styles/liberty"
@@ -152,13 +162,41 @@ export function MapComponent({
         if (contextMenuCoord) setContextMenuCoord(null);
       }}
     >
-      <GeolocateControl
-        position="bottom-right"
-        onGeolocate={(e) => {
-          onUserLocationUpdateHandler(e.coords.latitude, e.coords.longitude);
-        }}
-      />
-      <NavigationControl position="bottom-right" />
+      {!routeStarted ? (
+        <>
+          <GeolocateControl
+            position="bottom-right"
+            positionOptions={{ enableHighAccuracy: true }}
+            onGeolocate={(e) => {
+              onUserLocationUpdateHandler(
+                e.coords.latitude,
+                e.coords.longitude
+              );
+            }}
+            showAccuracyCircle={!routeStarted}
+            showUserLocation={!routeStarted}
+          />
+          <NavigationControl position="bottom-right" />
+        </>
+      ) : (
+        <>
+          <GeolocateControl
+            style={{ position: "absolute", bottom: "100px", right: "5px" }}
+            positionOptions={{ enableHighAccuracy: true }}
+            onGeolocate={(e) => {
+              onUserLocationUpdateHandler(
+                e.coords.latitude,
+                e.coords.longitude
+              );
+            }}
+            showAccuracyCircle={false}
+            showUserLocation={false}
+          />
+          <NavigationControl
+            style={{ position: "absolute", bottom: "140px", right: "5px" }}
+          />
+        </>
+      )}
 
       {/* show shortest path route on below of active route  if sp path not activeRoute*/}
       {!isDirectionActive && activeRoute != 0 && lineData && (
@@ -303,6 +341,22 @@ export function MapComponent({
             />
           </Source>
         </>
+      )}
+
+      {routeStarted && snappedGPSLoc && (
+        <Marker
+          latitude={snappedGPSLoc.lat}
+          longitude={snappedGPSLoc.lon}
+          rotation={gpsHeading - userRouteMarkerDegree}
+          anchor="center"
+        >
+          <div
+            className="bg-[#9CDCED]/35 flex items-center justify-center
+           rounded-full w-[70px] h-[70px]  "
+          >
+            <FaLocationArrow size={25} color="#00B0EB" />
+          </div>
+        </Marker>
       )}
 
       {contextMenuCoord && (

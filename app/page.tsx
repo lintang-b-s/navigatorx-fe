@@ -14,48 +14,51 @@ import {
 } from "./lib/navigatorxApi";
 import polyline from "@mapbox/polyline";
 import { Layer, Source } from "@vis.gl/react-maplibre";
-
-export type LineData = {
-  type: string;
-  geometry: {
-    type: string;
-    coordinates: number[][];
-  };
-};
+import { GPSTrace, LineData } from "./types/definition";
+import { fetchMapMatch } from "./lib/mapmatchApi";
+import { haversineDistance } from "./lib/util";
+import {
+  getCurrentUserDirectionIndex,
+  getDistanceFromUserToNextTurn,
+  isUserOffTheRoute,
+} from "./lib/routing";
 
 export default function Home() {
-  const [showResult, setShowResult] = useState(false);
+  // real-time map matching states
+  const [snappedEdgeID, setSnappedEdgeID] = useState<number>(-1);
+  const [routeStarted, setRouteStarted] = useState(false);
+  const [snappedGpsLoc, setSnappedGpsLoc] = useState<GPSTrace>();
+  const [gpsHeading, setGpsHeading] = useState<number>(0); // bearing (user heading angle from North)
+  const [distanceFromNextTurnPoint, setDistanceFromNextTurnPoint] =
+    useState<number>(0); // in meter
+  const [currentDirectionIndex, setCurrentDirectionIndex] = useState(1);
+
+  // search states
+  const searchParams = useSearchParams();
+  const source = searchParams.get("source");
+  const destination = searchParams.get("destination");
   const [isSourceFocused, setIsSourceFocused] = useState(false);
   const [isDestinationFocused, setIsDestinationFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState<Place[]>([]);
+
+  // routing states
+  const [routeData, setRouteData] = useState<RouteResponse[]>();
+  const [activeRoute, setActiveRoute] = useState(0);
+  const [isDirectionActive, setIsDirectionActive] = useState(false);
+  const [sourceLoc, setSourceLoc] = useState<Place>();
+  const [destinationLoc, setDestinationLoc] = useState<Place>();
   const [polylineData, setPolylineData] = useState<LineData>();
   const [alternativeRoutesLineData, setAlternativeRoutesLineData] = useState<
     LineData[]
   >([]);
-
-  const [isDirectionActive, setIsDirectionActive] = useState(false);
-
-  const [activeRoute, setActiveRoute] = useState(0);
-
-  const [routeData, setRouteData] = useState<RouteResponse[]>();
-
-  const searchParams = useSearchParams();
-  const source = searchParams.get("source");
-  const destination = searchParams.get("destination");
-
-  const [searchResults, setSearchResults] = useState<Place[]>([]);
-
-  const [sourceLoc, setSourceLoc] = useState<Place>();
-  const [destinationLoc, setDestinationLoc] = useState<Place>();
-
+  const [showResult, setShowResult] = useState(false);
   const [nextTurnIndex, setNextTurnIndex] = useState(-1);
   const pathname = usePathname();
-
-  const { replace } = useRouter();
-
   const [userLoc, setUserLoc] = useState<UserLocation>({
     longitude: -100,
     latitude: 40,
   });
+  const { replace } = useRouter();
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -123,15 +126,13 @@ export default function Home() {
     setIsSourceFocused(val);
   };
 
-  const onHandleStartRoute = async (
+  const onHandleGetRoutes = async (
     e: MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
-    console.log("sourceLoc", sourceLoc);
-    console.log("destinationLoc", destinationLoc);
     if (!sourceLoc || !destinationLoc) {
       toast.error("Please select both source and destination");
     }
-    console.log("tess");
+
     e.preventDefault();
 
     try {
@@ -155,10 +156,22 @@ export default function Home() {
         },
       };
 
-      console.log("linedata", linedata);
       setPolylineData(linedata);
-      setAlternativeRoutesLineData(
-        alternativeRouteData.routes.slice(1).map((route) => {
+
+      const dummyRoute: LineData = {
+        type: "Feature",
+        geometry: {
+          type: "LineString",
+          coordinates: [
+            [-100, 40],
+            [-100, 40],
+          ],
+        },
+      };
+
+      const alternativesPolyline = alternativeRouteData.routes
+        .slice(1)
+        .map((route) => {
           const coords = polyline.decode(route.path);
           return {
             type: "Feature",
@@ -167,8 +180,8 @@ export default function Home() {
               coordinates: coords.map((coord) => [coord[1], coord[0]]),
             },
           };
-        })
-      );
+        });
+      setAlternativeRoutesLineData([dummyRoute, ...alternativesPolyline]);
       setRouteData([spRouteData, ...alternativeRouteData.routes.slice(1)]);
     } catch (error: any) {
       toast.error(error.message);
@@ -200,7 +213,6 @@ export default function Home() {
         distance: 0,
       };
       if (isSource) {
-        console.log("push param source", newUserLoc);
         setSourceLoc(newUserLoc);
 
         pushParam("source", newUserLoc);
@@ -232,6 +244,168 @@ export default function Home() {
     setNextTurnIndex(index);
   };
 
+  const handleStartRoute = (start: boolean) => {
+    setRouteStarted(start);
+  };
+
+  useEffect(() => {
+    if (routeStarted) {
+      if (!("geolocation" in navigator)) {
+        console.error("Geolocation not supported");
+        return;
+      }
+      let currentGpsTraces: GPSTrace[] = [];
+
+      const intervalId = setInterval(async () => {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            if (currentGpsTraces.length > 0) {
+              const currLastDistance = haversineDistance(
+                pos.coords.latitude,
+                pos.coords.longitude,
+                currentGpsTraces[currentGpsTraces.length - 1].lat,
+                currentGpsTraces[currentGpsTraces.length - 1].lon
+              );
+              if (currLastDistance * 1000 < 8.14) {
+                return;
+              }
+            }
+
+            currentGpsTraces.push({
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude,
+            });
+
+            const resp = await fetchMapMatch(currentGpsTraces);
+            const lastProjectedLoc =
+              resp.projection_coordinates[
+                resp.projection_coordinates.length - 1
+              ];
+
+            setSnappedEdgeID(
+              resp.observations[resp.observations.length - 1].snapped_edge_id
+            );
+
+            if (
+              snappedGpsLoc?.lat == lastProjectedLoc.lat &&
+              snappedGpsLoc.lon == lastProjectedLoc.lon
+            ) {
+              return;
+            }
+
+            const usedRouteDirections =
+              routeData?.[activeRoute].driving_directions;
+
+            const directionsIndex = getCurrentUserDirectionIndex({
+              snappedEdgeID:
+                resp.observations[resp.observations.length - 1].snapped_edge_id,
+              snappedGPSLoc: lastProjectedLoc,
+              drivingDirections: usedRouteDirections!,
+            });
+            setCurrentDirectionIndex(directionsIndex);
+
+            setDistanceFromNextTurnPoint(
+              getDistanceFromUserToNextTurn({
+                snappedGPSLoc: lastProjectedLoc,
+                nextTurnPoint: usedRouteDirections![directionsIndex].turn_point,
+              }) * 1000.0
+            );
+
+            setGpsHeading(pos.coords.heading ? pos.coords.heading : 0);
+
+            setSnappedGpsLoc({
+              lat: lastProjectedLoc.lat,
+              lon: lastProjectedLoc.lon,
+            });
+          },
+          (err) => {
+            // hmm break
+            currentGpsTraces = [];
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 5000,
+          }
+        );
+      }, 1500);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    } else {
+    }
+  }, [routeStarted]);
+
+  useEffect(() => {
+    const usedRoute = routeData?.[activeRoute];
+    const firstRouteEdgeID = usedRoute?.driving_directions[0].edge_ids[0];
+    if (snappedEdgeID == firstRouteEdgeID) {
+      return;
+    }
+
+    if (snappedGpsLoc) {
+      (async () => {
+        const isOffTheRoute = isUserOffTheRoute({
+          snappedEdgeID: snappedEdgeID,
+          snappedGPSLoc: {
+            lat: snappedGpsLoc.lat,
+            lon: snappedGpsLoc.lon,
+          },
+          routeData: usedRoute!,
+        });
+
+        if (isOffTheRoute) {
+          // driver keluar jalur selected route -> do re-routing
+          const reqBody = {
+            srcLat: snappedGpsLoc.lat!,
+            srcLon: snappedGpsLoc.lon!,
+            destLat: destinationLoc?.osm_object.lat!,
+            destLon: destinationLoc?.osm_object.lon!,
+          };
+
+          const newSpRouteData = await fetchRoute(reqBody);
+          setRouteData((prev) => {
+            if (!prev) return [newSpRouteData];
+            return prev.map((r, i) => (i === activeRoute ? newSpRouteData : r));
+          });
+          const coords = polyline.decode(newSpRouteData.path);
+          const linedata: LineData = {
+            type: "Feature",
+            geometry: {
+              type: "LineString",
+              coordinates: coords.map((coord) => [coord[1], coord[0]]),
+            },
+          };
+
+          if (activeRoute == 0) {
+            setPolylineData(linedata);
+          } else {
+            setAlternativeRoutesLineData([
+              ...alternativeRoutesLineData.map((r, i) => {
+                if (i == activeRoute) {
+                  return linedata;
+                }
+                return r;
+              }),
+            ]);
+          }
+        }
+      })();
+    }
+  }, [snappedGpsLoc, snappedEdgeID]);
+
+  const handleSetRouteData = (data: RouteResponse[]) => {
+    setRouteData(data);
+  };
+
+  useEffect(() => {
+    if (routeData?.length == 0) {
+      setPolylineData(undefined);
+      setAlternativeRoutesLineData([]);
+    }
+  }, [routeData]);
+
   return (
     <main className="flex relative  w-full overflow-hidden">
       <MapComponent
@@ -244,11 +418,14 @@ export default function Home() {
         nextTurnIndex={nextTurnIndex}
         onSelectSource={onSelectSource}
         onSelectDestination={onSelectDestination}
+        routeStarted={routeStarted}
+        snappedGPSLoc={snappedGpsLoc}
+        gpsHeading={gpsHeading}
       />
       <Router
         sourceSearchActive={handleFocusSourceSearch}
         destinationSearchActive={setIsDestinationFocused}
-        onHandleStartRoute={onHandleStartRoute}
+        onHandleGetRoutes={onHandleGetRoutes}
         isSourceFocused={isSourceFocused}
         isDestinationFocused={isDestinationFocused}
         onHandleReverseGeocoding={onHandleReverseGeocoding}
@@ -257,6 +434,13 @@ export default function Home() {
         activeRoute={activeRoute}
         handleDirectionActive={handleDirectionActive}
         handleSetNextTurnIndex={handleSetNextTurnIndex}
+        handleStartRoute={handleStartRoute}
+        routeStarted={routeStarted}
+        distanceFromNextTurnPoint={distanceFromNextTurnPoint}
+        currentDirectionIndex={currentDirectionIndex}
+        sourceLoc={sourceLoc}
+        userLoc={userLoc}
+        handleSetRouteData={handleSetRouteData}
       />
 
       {showResult && isSourceFocused && (
