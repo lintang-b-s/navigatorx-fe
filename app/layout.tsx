@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { Suspense } from "react";
@@ -11,6 +11,12 @@ const openSans = Open_Sans({
 export const metadata: Metadata = {
   title: "NavigatorX",
   description: "osm routing engine",
+};
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
