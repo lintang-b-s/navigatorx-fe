@@ -162,6 +162,8 @@ function showRouteResultMobile(
                cursor-pointer aria-disabled:opacity-50  ml-2  py-3 `}
               onClick={(e) => {
                 props.handleSetRouteData([]);
+                
+                props.handleDirectionActive(false);
               }}
             >
               <IoIosArrowBack size={20} color="white" />
@@ -302,7 +304,6 @@ function showRouteEtaAndDistance(
        rounded-full"
         onClick={() => {
           handleStartRoute(false);
-        
         }}
       >
         <FaCheck size={15} color="#222831" />

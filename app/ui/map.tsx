@@ -95,7 +95,7 @@ export function MapComponent({
           zoom: zoomLevel,
         });
       }
-    } else if (lineData) {
+    } else if (lineData && routeData?.length! > 0) {
       let zoomLevel = 15;
       if (routeData![0].distance > 7 && routeData![0].distance < 15) {
         zoomLevel = 12;
