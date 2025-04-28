@@ -330,8 +330,7 @@ export default function Home() {
       return () => {
         clearInterval(intervalId);
       };
-    } else {
-    }
+    } 
   }, [routeStarted]);
 
   // re-routing logic useffect

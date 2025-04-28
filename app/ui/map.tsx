@@ -163,7 +163,7 @@ export function MapComponent({
       }}
       touchZoomRotate={true}
       onLoad={(e) => {
-        e.target.touchZoomRotate.enableRotation(); 
+        e.target.touchZoomRotate.enableRotation();
       }}
     >
       {!routeStarted ? (
@@ -311,7 +311,7 @@ export function MapComponent({
                 height={30}
                 style={{
                   transform: `rotate(${
-                    (turn.turn_bearing * 180) / Math.PI
+                   ( (turn.turn_bearing * 180) / Math.PI) - gpsHeading
                   }deg)`,
                 }}
               />
