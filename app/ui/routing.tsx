@@ -112,10 +112,6 @@ export function Router(props: RouterProps) {
 
           <button
             onClick={(e) => {
-              console.log(
-                "reverse geocode click, isSourceFocused:",
-                isSourceFocused
-              );
               props.onHandleReverseGeocoding(e, isSourceFocused);
             }}
             className={`flex flex-row px-4 mt-2  ${
@@ -162,7 +158,7 @@ function showRouteResultMobile(
                cursor-pointer aria-disabled:opacity-50  ml-2  py-3 `}
               onClick={(e) => {
                 props.handleSetRouteData([]);
-                
+
                 props.handleDirectionActive(false);
               }}
             >

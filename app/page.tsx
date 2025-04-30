@@ -149,6 +149,8 @@ export default function Home() {
         fetchAlternativeRoutes(reqBody),
       ]);
 
+      setActiveRoute(0);
+
       const coords = polyline.decode(spRouteData.path);
       const linedata: LineData = {
         type: "Feature",
@@ -330,7 +332,7 @@ export default function Home() {
       return () => {
         clearInterval(intervalId);
       };
-    } 
+    }
   }, [routeStarted]);
 
   // re-routing logic useffect
